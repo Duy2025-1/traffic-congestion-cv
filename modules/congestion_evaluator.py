@@ -2,7 +2,7 @@
 
 class TrafficCongestionEvaluator:
     def __init__(self, w_occ=0.4, w_spd=0.4, w_pcu=0.2, v_free=40.0, max_pcu_cap=50.0):
-        assert abs((w_occ + w_spd + w_pcu) - 1.0) < 1e-4, "Tổng trọng số phải bằng 1.0"
+        assert abs((w_occ + w_spd + w_pcu) - 1.0) < 1e-4, "Tong trong so phai bang 1.0"
         self.w_occ = w_occ
         self.w_spd = w_spd
         self.w_pcu = w_pcu
@@ -31,7 +31,12 @@ class TrafficCongestionEvaluator:
             "instant_tci": round(instant_tci, 3),
             "smoothed_tci": round(smoothed_tci, 3),
             "level": level_label,
-            "color_bgr": level_color
+            "color_bgr": level_color,
+            "metrics": {
+                "occupancy": round(o_norm, 3),
+                "speed_norm": round(v_norm, 3),
+                "pcu_density": round(d_pcu_norm, 3)
+            }
         }
 
     def _classify_level(self, tci):
