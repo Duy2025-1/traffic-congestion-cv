@@ -1,0 +1,9 @@
+﻿1. ĐẶT VẤN ĐỀ VÀ PHÁT BIỂU MỤC TIÊU
+
+1.1. Bối cảnh thực tế:
+Ùn tắc giao thông tại các đô thị lớn như TP. Hồ Chí Minh là vấn đề nan giải, đặc biệt tại các nút giao thông có lưu lượng xe máy hỗn hợp cao. Các hệ thống giám sát hiện nay chủ yếu dựa vào quan sát thủ công hoặc cảm biến từ chôn ngầm dưới đường với chi phí bảo trì đắt đỏ. Việc tận dụng mạng lưới camera giám sát đô thị sẵn có để ước lượng định lượng mức độ ùn tắc theo thời gian thực là giải pháp khả thi và có tính ứng dụng cao.
+
+1.2. Phát biểu mục tiêu & Giả thuyết kiểm chứng (Bắt buộc):
+- Vấn đề: Hệ thống giải quyết bài toán phân loại định lượng mức độ ùn tắc giao thông đô thị theo 4 cấp độ (Thông thoáng, Bình thường, Ùn ứ, Tắc nghẽn) từ chuỗi khung hình camera giám sát góc cao tại TP. Hồ Chí Minh.
+- Giả thuyết: Chúng tôi dự đoán rằng việc kết hợp tỷ lệ chiếm dụng diện tích mặt đường từ kỹ thuật phân đoạn trừ nền (Chương 4), vector vận tốc trung bình từ dòng quang học Optical Flow (Chương 3) và tải trọng quy đổi PCU (Chương 5) sẽ mang lại độ chính xác phân loại F1-score cao hơn tối thiểu 15% so với phương pháp chỉ đếm số lượng xe truyền thống, đặc biệt trong các tình huống xe máy ken đặc che khuất lẫn nhau tại Việt Nam.
+- Tiêu chí thành công: Độ chính xác F1-score trên tập dữ liệu kiểm thử đạt >= 85%, sai số ước lượng dòng phương tiện <= 10%, và toàn bộ pipeline duy trì tốc độ xử lý thời gian thực >= 20 FPS trên máy tính thông thường.
