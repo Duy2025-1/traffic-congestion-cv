@@ -1,4 +1,4 @@
-﻿import cv2
+import cv2
 import numpy as np
 import time
 from modules.preprocessing import preprocess_frame, get_perspective_bev
@@ -25,15 +25,32 @@ def draw_hud(frame, result, fps):
     cv2.putText(frame, f"Ty le toc do: {metrics.get('speed_norm', 0.0)*100:.1f}% | FPS: {fps:.1f}", 
                 (35, 160), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 1, cv2.LINE_AA)
 
-def main(video_source=0):
+def main():
     """
-    video_source: 0 (webcam mặc định để test), 
-    hoặc đường dẫn video: 'data/raw/sample_traffic.mp4'
+    Chạy pipeline giám sát giao thông
+    Hỗ trợ webcam (0), file video cục bộ, hoặc link YouTube.
     """
-    cap = cv2.VideoCapture(video_source)
-    if not cap.isOpened():
-        print(f"[LOI] Khong the mo nguon video: {video_source}")
-        return
+    import sys
+    video_source = 0
+    if len(sys.argv) > 1:
+        video_source = sys.argv[1]
+        
+    is_vidgear = False
+    if isinstance(video_source, str) and ('youtube.com' in video_source or 'youtu.be' in video_source):
+        try:
+            from vidgear.gears import CamGear
+            print(f"[THONG TIN] Dang tai luong video tu YouTube: {video_source}")
+            options = {"STREAM_RESOLUTION": "720p"}
+            stream = CamGear(source=video_source, stream_mode=True, logging=False, **options).start()
+            is_vidgear = True
+        except ImportError:
+            print("[LOI] Vui long cai dat vidgear: pip install vidgear yt-dlp")
+            return
+    else:
+        cap = cv2.VideoCapture(video_source)
+        if not cap.isOpened():
+            print(f"[LOI] Khong the mo nguon video: {video_source}")
+            return
 
     # Khởi tạo các module từ TV2 -> TV5 và bộ tính TCI của TV1
     segmenter = RoadSegmenter()
@@ -43,10 +60,15 @@ def main(video_source=0):
 
     prev_time = time.time()
 
-    while cap.isOpened():
-        ret, frame = cap.read()
-        if not ret:
-            break
+    while True:
+        if is_vidgear:
+            frame = stream.read()
+            if frame is None:
+                break
+        else:
+            ret, frame = cap.read()
+            if not ret:
+                break
 
         # Tính FPS
         curr_time = time.time()
@@ -75,14 +97,24 @@ def main(video_source=0):
         # Vẽ HUD lên khung hình
         draw_hud(frame, result, fps)
 
+        # Tạo Heatmap hiển thị Optical Flow (TV4)
+        flow_mag[flow_mag < motion_est.noise_threshold] = 0
+        mag_clipped = np.clip(flow_mag, 0, 5.0)
+        mag_uint8 = np.uint8(mag_clipped * (255.0 / 5.0))
+        heatmap = cv2.applyColorMap(mag_uint8, cv2.COLORMAP_JET)
+
         cv2.imshow("Traffic Congestion Pipeline - UTH", frame)
         cv2.imshow("Occupancy Mask (Ch.4)", occ_mask)
+        cv2.imshow("Optical Flow Heatmap (TV4)", heatmap)
 
         # Nhấn phím 'q' trên màn hình hiển thị để thoát
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
-    cap.release()
+    if is_vidgear:
+        stream.stop()
+    else:
+        cap.release()
     cv2.destroyAllWindows()
 
 if __name__ == "__main__":

@@ -49,10 +49,11 @@ def test_optical_flow(video_source=0):
         avg_speed, magnitude = estimator.estimate_speed(frame)
         
         # Vẽ bản đồ nhiệt (Heatmap) cho các vector chuyển động
-        # Loại bỏ nhiễu nhỏ cho việc hiển thị rõ hơn (tùy chọn)
+        # Loại bỏ nhiễu nhỏ cho việc hiển thị rõ hơn
         magnitude[magnitude < estimator.noise_threshold] = 0
-        mag_normalized = cv2.normalize(magnitude, None, 0, 255, cv2.NORM_MINMAX)
-        mag_uint8 = np.uint8(mag_normalized)
+        # Cố định ngưỡng max (clip) ở mức 5.0 để các xe ở xa (chuyển động nhỏ) vẫn hiển thị được màu cam/đỏ
+        mag_clipped = np.clip(magnitude, 0, 5.0)
+        mag_uint8 = np.uint8(mag_clipped * (255.0 / 5.0))
         heatmap = cv2.applyColorMap(mag_uint8, cv2.COLORMAP_JET)
         
         # Hiển thị vận tốc trung bình lên frame gốc
@@ -66,7 +67,10 @@ def test_optical_flow(video_source=0):
         if cv2.waitKey(30) & 0xFF == ord('q'):
             break
             
-    cap.release()
+    if is_vidgear:
+        stream.stop()
+    else:
+        cap.release()
     cv2.destroyAllWindows()
 
 if __name__ == "__main__":
