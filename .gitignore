@@ -19,3 +19,5 @@ weights/*.onnx
 *.onnx
 .DS_Store
 Thumbs.db
+runs/
+data/dataset/

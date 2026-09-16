@@ -51,7 +51,7 @@ def run_video_detection(video_path, max_frames=150, show_window=False, save_resu
     print(f"  Do phan giai: {w}x{h} | FPS goc: {fps_video:.1f} | Tong frames: {total_frames}")
     print("=" * 70)
 
-    detector = VehicleDetector(conf_thresh=0.4, iou_thresh=0.45)
+    detector = VehicleDetector(conf_thresh=0.22, iou_thresh=0.45, imgsz=1280, high_accuracy=True)
     os.makedirs(os.path.dirname(save_result_path), exist_ok=True)
 
     frame_idx = 0
@@ -94,6 +94,8 @@ def run_video_detection(video_path, max_frames=150, show_window=False, save_resu
                   f"Tong PCU: {total_pcu:5.2f} | FPS: {fps_curr:4.1f}")
 
         if show_window:
+            cv2.namedWindow("TV5 - Vehicle Detection & PCU Estimation", cv2.WINDOW_NORMAL)
+            cv2.resizeWindow("TV5 - Vehicle Detection & PCU Estimation", 1120, 630)
             cv2.imshow("TV5 - Vehicle Detection & PCU Estimation", annotated_frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
@@ -212,22 +214,36 @@ def main():
     congested_path = os.path.join("data", "raw", "traffic_congested.mp4")
 
     # Xử lý các cờ dòng lệnh
-    if "--sweep" in sys.argv:
+    if "-h" in sys.argv or "--help" in sys.argv:
+        print("Huong dan su dung test_tv5.py:")
+        print("  python test_tv5.py [video_path] [--gui]    : Chay test video (them --gui de xem cua so)")
+        print("  python test_tv5.py --sweep                : Chay khao sat Parameter Sweep tren video ket xe")
+        print("  python test_tv5.py --all [--gui]          : Chay ca test video va Parameter Sweep")
+        print("  python test_tv5.py --train [args...]      : Chay module huan luyen va toi uu hoa mo hinh")
+        return
+
+    show_gui = "--gui" in sys.argv or "--show" in sys.argv
+
+    if "--train" in sys.argv:
+        from train_tv5 import main as train_main
+        train_main()
+        return
+    elif "--sweep" in sys.argv:
         run_parameter_sweep_experiment(congested_path)
         return
     elif "--all" in sys.argv:
-        run_video_detection(congested_path, max_frames=100)
+        run_video_detection(congested_path, max_frames=100, show_window=show_gui)
         run_parameter_sweep_experiment(congested_path)
         return
     elif len(sys.argv) > 1 and not sys.argv[1].startswith("-"):
         selected_video = sys.argv[1]
-        run_video_detection(selected_video, max_frames=120)
+        run_video_detection(selected_video, max_frames=120, show_window=show_gui)
         return
 
     # Nếu không phải terminal tương tác (ví dụ chạy qua pipe/script)
     if not sys.stdin.isatty():
         print("[INFO] Che do non-interactive: Tu dong chay toan bo quy trinh kiem thu.")
-        run_video_detection(congested_path, max_frames=60)
+        run_video_detection(congested_path, max_frames=60, show_window=show_gui)
         run_parameter_sweep_experiment(congested_path)
         return
 
@@ -238,9 +254,10 @@ def main():
         print(f"  {idx}. {v} [{status}]")
     print("  4. Chay khao sat Parameter Sweep nhanh (Frame 3s traffic_congested)")
     print("  5. Chay toan bo (Kiem thu video + Parameter Sweep)")
+    print("  6. Chay huan luyen & fine-tuning mo hinh toi uu (train_tv5)")
 
     try:
-        choice = input("\nChon che do kiem thu (1-5) [Mac dinh 5]: ").strip()
+        choice = input("\nChon che do kiem thu (1-6) [Mac dinh 5]: ").strip()
         if not choice:
             choice = "5"
     except (EOFError, KeyboardInterrupt):
@@ -248,12 +265,15 @@ def main():
 
     if choice in ["1", "2", "3"]:
         selected_video = os.path.join("data", "raw", videos[int(choice) - 1])
-        run_video_detection(selected_video, max_frames=150)
+        run_video_detection(selected_video, max_frames=150, show_window=show_gui)
     elif choice == "4":
         run_parameter_sweep_experiment(congested_path)
     elif choice == "5":
-        run_video_detection(congested_path, max_frames=120)
+        run_video_detection(congested_path, max_frames=120, show_window=show_gui)
         run_parameter_sweep_experiment(congested_path)
+    elif choice == "6":
+        from train_tv5 import main as train_main
+        train_main()
 
 
 if __name__ == "__main__":

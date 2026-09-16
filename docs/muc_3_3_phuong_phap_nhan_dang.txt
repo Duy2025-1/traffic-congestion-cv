@@ -27,3 +27,23 @@ Tại các đô thị Việt Nam (đặc biệt các tuyến vành đai và cử
   + Tại conf = 0.70: Chỉ nhận diện được 1 xe gần nhất, bỏ sót 90% dòng xe (1.0 PCU).
   + Cấu hình tối ưu: conf_threshold = 0.40 - 0.45 kết hợp iou_threshold = 0.45 giúp tách biệt rành mạch giữa xe tải và xe buýt, triệt tiêu box trùng lặp và phản ánh chính xác tải trọng giao thông (19.5 PCU tại frame kiểm thử).
 - Tốc độ xử lý: Đạt 5.8 - 8.5 FPS trên CPU thông thường và > 30 FPS trên GPU, đảm bảo khả năng tích hợp vào pipeline thời gian thực của nhóm.
+
+3.3.4. Tối Ưu Hóa Nhận Diện Toàn Khung Hình (Full-Frame Coverage):
+- Thách thức thực tế: Khi chạy mô hình YOLO mặc định ở độ phân giải 640p, các phương tiện ở nửa trên khung hình (vùng đường xa chân trời cách camera > 50m) bị thu nhỏ xuống dưới 10x10 pixel, dẫn đến tình trạng bỏ sót nghiêm trọng (chỉ phát hiện được 16 xe ở nửa dưới gần camera).
+- Các giải pháp nâng cấp:
+  + Nâng độ phân giải suy luận lên imgsz=1280 (giữ trọn vẹn chi tiết điểm ảnh từ luồng camera 1080p).
+  + Thuật toán quét 2 tầng tăng cường (Two-pass Sliced Detection): Quét tầng 1 toàn cảnh kết hợp quét tầng 2 phóng đại vùng chân trời (y: 20% - 65% chiều cao khung hình) với ngưỡng tin cậy bù trừ thích ứng.
+  + Áp dụng Per-class NMS: Phân tách thuật toán triệt tiêu cực đại không cực trị theo từng lớp độc lập, triệt tiêu hiện tượng ô tô hoặc xe tải lớn "nuốt chửng" xe máy đi liền kề.
+  + Bounding box thích ứng: Tự động dùng nét mảnh 1px và nhãn vi tính co gọn cho các phương tiện nhỏ ở xa, ngăn ngừa tình trạng chữ đè lên các xe phía sau.
+- Kết quả đột phá: Số lượng phương tiện phát hiện tăng vọt từ 16 xe lên 68 xe trên video traffic_congested (+325% độ bao phủ), đảm bảo phát hiện đồng đều xuyên suốt toàn bộ chiều sâu cung đường.
+
+3.3.5. Quy Trình Huấn Luyện & Fine-Tuning Tối Ưu Cho Giao Thông Đô Thị (train_tv5.py):
+- Xây dựng tập dữ liệu chuyên biệt (configs/traffic_dataset.yaml) phân định chính xác 4 lớp: motorcycle (0.33 PCU), car (1.0 PCU), bus (2.5 PCU), truck (3.0 PCU).
+- Tích hợp pipeline tự động trích xuất frame từ video thực nghiệm và gán nhãn pseudo-labeling (--prepare-data) với hơn 4,000 bounding box mẫu.
+- Bộ siêu tham số huấn luyện tối ưu hóa cao độ:
+  + Độ phân giải huấn luyện: imgsz=1280.
+  + Tăng cường dữ liệu (Augmentation): Mosaic (1.0) kết hợp Mixup (0.15) để mô phỏng chính xác hiện tượng xe cộ che khuất nhau trong dòng kẹt xe; Scale jittering (0.5), Rotation (5 độ), Lật ngang (fliplr=0.5); Tắt mosaic ở 5 epoch cuối (close_mosaic=5) để làm sắc nét đường biên hộp bao.
+  + Bộ tối ưu hóa: AdamW, lr0=0.001, lrf=0.01 với bộ điều chỉnh lịch học Cosine Annealing và 3 epoch Warmup khởi động.
+  + Điều chỉnh hàm mất mát (Loss Gains): Tăng trọng số Box Loss lên 7.5 và DFL Loss lên 1.5 nhằm siết chặt tọa độ hộp bao cho các phương tiện mật độ dày.
+  + Đóng băng Backbone (freeze=10): Giữ nguyên các tầng trích xuất đặc trưng sâu được huấn luyện từ tập dữ liệu lớn, chỉ cập nhật tầng phát hiện neck & head, giúp mô hình hội tụ nhanh chóng, tránh quá khớp (overfitting) và giảm tải chi phí tính toán.
+  + Tự động xuất trọng số tốt nhất vào weights/best.pt và hỗ trợ định dạng ONNX/TorchScript để triển khai thời gian thực.

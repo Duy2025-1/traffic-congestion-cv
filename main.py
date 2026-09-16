@@ -37,7 +37,8 @@ def main():
     Chạy pipeline giám sát giao thông
     Hỗ trợ webcam (0), file video cục bộ, hoặc link YouTube.
     """
-    video_source = 0
+    default_local_video = os.path.join("data", "raw", "traffic_congested.mp4")
+    video_source = default_local_video if os.path.exists(default_local_video) else 0
     max_frames = None
     headless = "--headless" in sys.argv or not sys.stdin.isatty()
 
@@ -73,7 +74,7 @@ def main():
     # Khởi tạo các module từ TV2 -> TV5 và bộ tính TCI của TV1
     segmenter = RoadSegmenter()
     motion_est = MotionEstimator()
-    detector = VehicleDetector()
+    detector = VehicleDetector(conf_thresh=0.20, imgsz=1280, high_accuracy=True)
     evaluator = TrafficCongestionEvaluator()
 
     prev_time = time.time()
@@ -132,8 +133,16 @@ def main():
             setattr(main, "_saved_snapshot", True)
 
         if not headless:
+            cv2.namedWindow("Traffic Congestion Pipeline - UTH", cv2.WINDOW_NORMAL)
+            cv2.resizeWindow("Traffic Congestion Pipeline - UTH", 1120, 630)
             cv2.imshow("Traffic Congestion Pipeline - UTH", frame)
+
+            cv2.namedWindow("Occupancy Mask (Ch.4)", cv2.WINDOW_NORMAL)
+            cv2.resizeWindow("Occupancy Mask (Ch.4)", 480, 270)
             cv2.imshow("Occupancy Mask (Ch.4)", occ_mask)
+
+            cv2.namedWindow("Optical Flow Heatmap (TV4)", cv2.WINDOW_NORMAL)
+            cv2.resizeWindow("Optical Flow Heatmap (TV4)", 480, 270)
             cv2.imshow("Optical Flow Heatmap (TV4)", heatmap)
 
             # Nhấn phím 'q' trên màn hình hiển thị để thoát

@@ -1,0 +1,14 @@
+# Cấu hình tập dữ liệu nhận dạng phương tiện giao thông (TV5 - Course 121036)
+# Phục vụ giám sát và đánh giá chỉ số ùn tắc giao thông đô thị (TCI - UTH)
+
+path: data/dataset      # Thư mục gốc tập dữ liệu (tương đối so với project root)
+train: images/train     # Tập huấn luyện (Train set)
+val: images/val         # Tập kiểm chuẩn (Validation set)
+test: images/val        # Tập kiểm thử (Test set)
+
+# 4 Lớp phương tiện chuẩn hóa theo hệ số tải trọng PCU tại Việt Nam
+names:
+  0: motorcycle   # Xe máy (Hệ số PCU = 0.33)
+  1: car          # Ô tô con (Hệ số PCU = 1.00)
+  2: bus          # Xe buýt (Hệ số PCU = 2.50)
+  3: truck        # Xe tải (Hệ số PCU = 3.00)
