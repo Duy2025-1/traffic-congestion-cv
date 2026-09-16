@@ -1,4 +1,7 @@
+import os
+import sys
 import cv2
+import numpy as np
 
 from modules.preprocessing import (
     preprocess_frame,
@@ -15,13 +18,24 @@ video_list = list(VIDEO_CONFIG.keys())
 for idx, video_name in enumerate(video_list, start=1):
     print(f"{idx}. {video_name}")
 
-choice = input("\nChon video (1-3): ")
-
-try:
-    video_name = video_list[int(choice) - 1]
-except (ValueError, IndexError):
-    print("Lua chon khong hop le!")
-    exit()
+video_name = video_list[0]
+if len(sys.argv) > 1 and not sys.argv[1].startswith("-"):
+    arg_val = sys.argv[1]
+    if arg_val.isdigit() and 1 <= int(arg_val) <= len(video_list):
+        video_name = video_list[int(arg_val) - 1]
+    elif arg_val in video_list:
+        video_name = arg_val
+    elif os.path.basename(arg_val) in video_list:
+        video_name = os.path.basename(arg_val)
+elif sys.stdin.isatty():
+    try:
+        choice = input("\nChon video (1-3) [Mac dinh 1]: ").strip()
+        if choice and choice.isdigit() and 1 <= int(choice) <= len(video_list):
+            video_name = video_list[int(choice) - 1]
+    except (EOFError, KeyboardInterrupt):
+        pass
+else:
+    print(f"[INFO] Che do non-interactive: Tu dong chon video 1 ({video_name})")
 
 print(f"\nDang mo: {video_name}")
 
@@ -82,15 +96,31 @@ print("\n===== PERSPECTIVE MATRIX =====")
 print(matrix)
 
 # ==========================================
-# HIEN THI
+# LUU KET QUA VA HIEN THI
 # ==========================================
-cv2.imshow("Original", frame)
-cv2.imshow("Processed", processed)
-cv2.imshow("Bird Eye View", bev_frame)
+os.makedirs("data/processed", exist_ok=True)
+save_path = "data/processed/tv2_test_result.jpg"
 
-print("\nNhan phim bat ky de dong...")
+# Ghép 3 ảnh so sánh trực quan
+h_out, w_out = 360, 480
+f_orig_resized = cv2.resize(frame, (w_out, h_out))
+f_proc_resized = cv2.cvtColor(cv2.resize(processed, (w_out, h_out)), cv2.COLOR_GRAY2BGR)
+f_bev_resized = cv2.cvtColor(cv2.resize(bev_frame, (w_out, h_out)), cv2.COLOR_GRAY2BGR)
 
-cv2.waitKey(0)
+cv2.putText(f_orig_resized, "1. Original", (15, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
+cv2.putText(f_proc_resized, "2. CLAHE + Blur", (15, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
+cv2.putText(f_bev_resized, "3. Bird Eye View", (15, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
+
+comparison = np.hstack([f_orig_resized, f_proc_resized, f_bev_resized])
+cv2.imwrite(save_path, comparison)
+print(f"\n[OK] Da luu anh so sanh TV2 vao: {save_path}")
+
+is_interactive = sys.stdin.isatty() and "--headless" not in sys.argv
+if is_interactive:
+    cv2.imshow("TV2 Preprocessing Comparison", comparison)
+    print("\nNhan phim bat ky de dong...")
+    cv2.waitKey(0)
 
 cap.release()
 cv2.destroyAllWindows()
+print("[THANH CONG] Kiem thu TV2 hoan tat!")

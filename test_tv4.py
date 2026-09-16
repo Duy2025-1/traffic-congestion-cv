@@ -5,9 +5,14 @@ import os
 
 # Thêm đường dẫn thư mục gốc vào sys.path để import modules
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+# Cấu hình encoding console UTF-8 trên Windows
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+
 from modules.optical_flow import MotionEstimator
 
-def test_optical_flow(video_source=0):
+def test_optical_flow(video_source=0, max_frames=80):
     print(f"Bắt đầu test Optical Flow (TV4) với video source: {video_source}")
     
     is_vidgear = False
@@ -61,10 +66,26 @@ def test_optical_flow(video_source=0):
         cv2.putText(frame, text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
                     
         # Hiển thị
-        cv2.imshow("Original Frame", frame)
-        cv2.imshow("Optical Flow Heatmap (TV4)", heatmap)
-        
-        if cv2.waitKey(30) & 0xFF == ord('q'):
+        is_interactive = sys.stdin.isatty() and "--headless" not in sys.argv
+        if is_interactive:
+            cv2.imshow("Original Frame", frame)
+            cv2.imshow("Optical Flow Heatmap (TV4)", heatmap)
+            if cv2.waitKey(30) & 0xFF == ord('q'):
+                break
+
+        frame_count = getattr(test_optical_flow, "_frame_count", 0) + 1
+        setattr(test_optical_flow, "_frame_count", frame_count)
+
+        if frame_count % 30 == 0 or frame_count == 1:
+            print(f"[Frame {frame_count:03d}] Avg Speed: {avg_speed:5.2f} px/frame")
+
+        if frame_count == 40 or getattr(test_optical_flow, "_best_heatmap", None) is None:
+            os.makedirs("data/processed", exist_ok=True)
+            vis_combined = np.hstack([frame, heatmap])
+            cv2.imwrite("data/processed/tv4_test_result.jpg", vis_combined)
+
+        if not is_interactive and frame_count >= max_frames:
+            print(f"[INFO] Da xu ly {max_frames} frames trong che do tu dong.")
             break
             
     if is_vidgear:
@@ -72,9 +93,20 @@ def test_optical_flow(video_source=0):
     else:
         cap.release()
     cv2.destroyAllWindows()
+    print("[OK] Da luu frame Optical Flow mau vao: data/processed/tv4_test_result.jpg")
+    print("[THANH CONG] Kiem thu TV4 hoan tat!")
+
+def test_optical_flow_wrapper(video_source=None, max_frames=80):
+    if video_source is None:
+        congested_path = os.path.join("data", "raw", "traffic_congested.mp4")
+        if os.path.exists(congested_path):
+            video_source = congested_path
+        else:
+            video_source = 0
+    test_optical_flow(video_source, max_frames=max_frames)
 
 if __name__ == "__main__":
-    video_path = 0 
-    if len(sys.argv) > 1:
-        video_path = sys.argv[1]
-    test_optical_flow(video_path)
+    v_source = None
+    if len(sys.argv) > 1 and not sys.argv[1].startswith("-"):
+        v_source = sys.argv[1]
+    test_optical_flow_wrapper(v_source)
