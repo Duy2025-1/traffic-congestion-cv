@@ -1,4 +1,4 @@
-﻿"""
+"""
 FILE CẤU HÌNH HỆ THỐNG - UTH TRAFFIC MONITORING
 Quản lý bởi: TV1 (Leader)
 """
@@ -20,5 +20,5 @@ PCU_WEIGHTS = {
     "motorcycle": 0.33,
     "car": 1.0,
     "bus": 2.5,
-    "truck": 2.5
+    "truck": 3.0    # 1 xe tải tương đương tải trọng chiếm dụng của 3 xe con tiêu chuẩn (Chương 5 - TV5)
 }

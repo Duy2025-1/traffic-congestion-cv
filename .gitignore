@@ -1,4 +1,4 @@
-﻿__pycache__/
+__pycache__/
 *.py[cod]
 *$py.class
 venv/
@@ -15,5 +15,7 @@ data/processed/*
 !data/processed/.gitkeep
 weights/*.pt
 weights/*.onnx
+*.pt
+*.onnx
 .DS_Store
 Thumbs.db
