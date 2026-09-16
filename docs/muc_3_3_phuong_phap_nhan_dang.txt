@@ -1,0 +1,29 @@
+3.3. PHƯƠNG PHÁP NHẬN DẠNG PHƯƠNG TIỆN VÀ QUY ĐỔI TẢI TRỌNG PCU (CHƯƠNG 5)
+Phụ trách: Thành viên 5 (TV5)
+
+3.3.1. Bối cảnh và Cơ sở Lý thuyết:
+Tại các đô thị Việt Nam (đặc biệt các tuyến vành đai và cửa ngõ TP.HCM), dòng giao thông mang tính hỗn hợp cao với tỷ lệ xe máy áp đảo xen lẫn ô tô con, xe buýt công cộng và xe tải nặng. Để phản ánh chính xác độ cản trở dòng chảy và nguy cơ gây ùn tắc, số lượng phương tiện thô (Vehicle Count) được quy đổi sang Đơn vị Xe con Tiêu chuẩn (Passenger Car Unit - PCU) theo Quy chuẩn Kỹ thuật Quốc gia:
+- Xe máy (motorcycle): 0.33 PCU (3 xe máy ~ 1 ô tô con).
+- Ô tô con / Taxi (car): 1.00 PCU (Đơn vị tiêu chuẩn cơ sở).
+- Xe buýt (bus): 2.50 PCU (Phương tiện thân dài, dừng đón trả khách thường xuyên).
+- Xe tải (truck): 3.00 PCU (Phương tiện tải trọng lớn, quán tính cao, cản trở đáng kể dòng lưu thông).
+
+3.3.2. Kiến trúc Module Nhận dạng (VehicleDetector):
+- Sử dụng mô hình mạng nơ-ron tích chập thời gian thực YOLOv8 (yolov8n.pt), tận dụng các đặc trưng phân cấp sâu để trích xuất bounding box và phân loại đa lớp.
+- Ánh xạ 4 lớp phương tiện từ tập nhãn COCO chuẩn:
+  + Class 2: car -> Ô tô con (Màu xanh lá - (0, 255, 0))
+  + Class 3: motorcycle -> Xe máy (Màu xanh ngọc - (255, 255, 0))
+  + Class 5: bus -> Xe buýt (Màu cam - (0, 165, 255))
+  + Class 7: truck -> Xe tải (Màu đỏ - (0, 0, 255))
+- Tổng tải trọng được tính theo công thức:
+  Total_PCU = (N_motorcycle * 0.33) + (N_car * 1.0) + (N_bus * 2.5) + (N_truck * 3.0)
+- Chỉ số mật độ tải trọng D_pcu = min(Total_PCU / Max_Capacity, 1.0) với Max_Capacity = 50.0 PCU được truyền trực tiếp cho bộ tính toán TCI của TV1.
+
+3.3.3. Thực nghiệm Khảo sát Tham số (Parameter Sweep):
+- Vấn đề: Với góc quay camera CCTV xiên nghiêng, xe buýt và xe tải thùng dài có kích thước chữ nhật kéo dài tương tự nhau, dễ dẫn đến hiện tượng nhận diện nhầm đúp (cùng một phương tiện bị gán cả hai bounding box: bus và truck) khi ngưỡng tin cậy (conf_threshold) quá thấp (< 0.35). Ngược lại, nếu ngưỡng conf_threshold quá cao (>= 0.70), các xe nhỏ và xe ở xa bị bỏ sót nghiêm trọng.
+- Thiết kế thí nghiệm: Khảo sát lưới tham số conf_threshold in [0.25, 0.40, 0.55, 0.70] kết hợp iou_threshold in [0.30, 0.45, 0.60].
+- Kết quả và Khuyến nghị:
+  + Tại conf = 0.25: Xuất hiện trùng lặp nhãn trên thân xe tải và xe buýt, làm tổng PCU bị đội lên sai lệch (34.0 PCU).
+  + Tại conf = 0.70: Chỉ nhận diện được 1 xe gần nhất, bỏ sót 90% dòng xe (1.0 PCU).
+  + Cấu hình tối ưu: conf_threshold = 0.40 - 0.45 kết hợp iou_threshold = 0.45 giúp tách biệt rành mạch giữa xe tải và xe buýt, triệt tiêu box trùng lặp và phản ánh chính xác tải trọng giao thông (19.5 PCU tại frame kiểm thử).
+- Tốc độ xử lý: Đạt 5.8 - 8.5 FPS trên CPU thông thường và > 30 FPS trên GPU, đảm bảo khả năng tích hợp vào pipeline thời gian thực của nhóm.
