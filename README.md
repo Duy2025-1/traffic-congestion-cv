@@ -1,4 +1,4 @@
-﻿# Ước Lượng Mức Độ Ùn Tắc Giao Thông Từ Camera (UTH)
+# Ước Lượng Mức Độ Ùn Tắc Giao Thông Từ Camera (UTH)
 
 **Học phần:** Xử Lý Ảnh và Thị Giác Máy Tính (121036)  
 **Trường:** Đại học Giao thông Vận tải TP. Hồ Chí Minh  
@@ -17,3 +17,25 @@
 * **TV5:** Phát hiện & Phân loại phương tiện PCU (modules/detection.py)
 * **TV6:** Đánh giá định lượng & Thí nghiệm (evaluation/metrics.py)
 * **TV7:** Demo Dashboard & Thảo luận (demo/app.py)
+
+## 🚀 Hướng Dẫn Chạy TV7 Demo Dashboard
+
+Module TV7 cung cấp bảng điều khiển trực quan hiển thị đồng thời 4 cửa sổ và bảng điều khiển trung tâm (TCI, nhãn ùn tắc, FPS):
+- **Cửa sổ 1:** Video camera gốc có bounding box nhận diện của TV5.
+- **Cửa sổ 2:** Ảnh nắn góc nhìn BEV của TV2.
+- **Cửa sổ 3:** Mặt nạ phân đoạn Occupancy Mask nhị phân của TV3.
+- **Cửa sổ 4:** Bản đồ nhiệt vận tốc (Optical Flow Heatmap) của TV4.
+- **Bảng điều khiển trung tâm:** Đồng hồ hiển thị giá trị TCI, nhãn mức độ ùn tắc (xanh/vàng/cam/đỏ) và chỉ số FPS thời gian thực.
+
+### 1. Khởi chạy Dashboard Web (Streamlit)
+```bash
+streamlit run demo/app.py
+```
+
+### 2. Chạy kiểm thử tự động module TV7
+```bash
+python test_tv7.py
+```
+
+> Chi tiết báo cáo bài làm và giải thích kiến trúc kỹ thuật của TV7 xem tại: [HUONG_DAN_TV7.md](HUONG_DAN_TV7.md)
+
