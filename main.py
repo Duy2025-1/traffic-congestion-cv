@@ -7,6 +7,12 @@ from modules.optical_flow import MotionEstimator
 from modules.detection import VehicleDetector
 from modules.congestion_evaluator import TrafficCongestionEvaluator
 
+try:
+    from configs.toadovideo import VIDEO_CONFIG
+except ImportError:
+    VIDEO_CONFIG = {}
+
+
 def draw_hud(frame, result, fps):
     """Vẽ bảng thông tin đo đạc trực quan lên màn hình"""
     overlay = frame.copy()
@@ -94,17 +100,29 @@ def main():
         fps = 1.0 / (curr_time - prev_time) if (curr_time - prev_time) > 0 else 0
         prev_time = curr_time
 
-        # 1. Tiền xử lý (TV2)
+        # 1. Phát hiện đối tượng & quy đổi tải trọng PCU (TV5)
+        pcu_count, detections = detector.detect_and_count_pcu(frame)
+
+        # Tự động thiết lập ROI mặt đường từ cấu hình hoặc ước lượng thích nghi
+        if segmenter.roi_mask is None:
+            v_key = os.path.basename(str(video_source))
+            h, w = frame.shape[:2]
+            if v_key in VIDEO_CONFIG:
+                pts = VIDEO_CONFIG[v_key]["src_pts"]
+                segmenter.set_roi_polygon((h, w), pts)
+            else:
+                segmenter.auto_estimate_road_roi((h, w), detections)
+
+        # 2. Tiền xử lý (TV2)
         enhanced_frame = preprocess_frame(frame)
 
-        # 2. Phân đoạn & đo diện tích chiếm dụng mặt đường (TV3)
-        occupancy_ratio, occ_mask = segmenter.extract_occupancy(enhanced_frame)
+        # 3. Phân đoạn & đo diện tích chiếm dụng mặt đường lai (TV3 Hybrid Occupancy)
+        occupancy_ratio, occ_mask = segmenter.extract_occupancy(
+            enhanced_frame, detections=detections
+        )
 
-        # 3. Ước lượng vận tốc qua Optical Flow (TV4)
+        # 4. Ước lượng vận tốc qua Optical Flow (TV4)
         avg_speed, flow_mag = motion_est.estimate_speed(enhanced_frame)
-
-        # 4. Phát hiện đối tượng & quy đổi tải trọng PCU (TV5)
-        pcu_count, detections = detector.detect_and_count_pcu(frame)
 
         # 5. Đánh giá mức độ ùn tắc TCI (TV1)
         result = evaluator.compute_tci(
@@ -112,6 +130,7 @@ def main():
             avg_speed=avg_speed,
             pcu_count=pcu_count
         )
+
 
         # Vẽ Bounding Box nhận diện xe (TV5) và HUD đánh giá ùn tắc (TV1)
         frame = detector.draw_detections(frame, detections)

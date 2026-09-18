@@ -69,7 +69,7 @@ class VehicleDetector:
             high_accuracy: Bật quét 2 tầng (Two-pass Sliced Detection) cho vùng xe ở xa chân trời
             device: Thiết bị chạy mô hình ('cpu', 'cuda', hoặc None để tự động)
         """
-        # Tự động chọn mô hình tối ưu nhất có sẵn trên máy (ưu tiên yolov8n.pt chuẩn bài toán TV5)
+        # Tự động chọn mô hình tối ưu nhất có sẵn trên máy (ưu tiên yolov8n.pt > yolov8s.pt > weights/best.pt)
         if model_path is None:
             if os.path.exists("yolov8n.pt"):
                 model_path = "yolov8n.pt"
