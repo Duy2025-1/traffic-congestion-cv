@@ -245,6 +245,33 @@ class VehicleDetector:
             return total_pcu, counts, detections
         return total_pcu, detections
 
+    def filter_detections_by_roi(self, detections: list, roi_pts: np.ndarray) -> list:
+        """
+        Lọc danh sách phương tiện: chỉ giữ lại xe có CENTER POINT nằm BÊN TRONG polygon ROI.
+        Xe nằm ngoài ROI (tòa nhà bên đường, vỉa hè, cây...) bị loại bỏ hoàn toàn.
+
+        :param detections: Danh sách dict {'label', 'box': [x1,y1,x2,y2], 'confidence'}
+        :param roi_pts: Polygon ROI dạng numpy int32 shape (N, 2) hoặc (N, 1, 2)
+        :return: Danh sách detections đã lọc - chỉ xe trong ROI
+        """
+        if roi_pts is None or len(detections) == 0:
+            return detections
+
+        pts = roi_pts.reshape(-1, 1, 2).astype(np.float32)
+        filtered = []
+        for det in detections:
+            x1, y1, x2, y2 = det["box"]
+            # Dùng center point của bounding box để kiểm tra
+            cx = int((x1 + x2) / 2)
+            cy = int((y1 + y2) / 2)
+            # pointPolygonTest > 0: trong polygon, = 0: trên cạnh, < 0: ngoài
+            result = cv2.pointPolygonTest(pts, (float(cx), float(cy)), measureDist=False)
+            if result >= 0:
+                filtered.append(det)
+        return filtered
+
+
+
     def _get_fallback_detections(self, frame):
         """Mô phỏng dữ liệu mẫu chuẩn khi chưa có trọng số mô hình hoặc GPU."""
         h, w = frame.shape[:2] if frame is not None else (720, 1280)

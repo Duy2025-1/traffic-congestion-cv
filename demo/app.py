@@ -197,15 +197,36 @@ class DashboardPipeline:
         # Tự động ước lượng ROI đa giác nếu chưa có cấu hình sẵn trong VIDEO_CONFIG
         if self.src_pts is None:
             if self.segmenter.roi_mask is None:
-                self.segmenter.auto_estimate_road_roi((h, w), detections)
-            self.src_pts = np.float32([
-                [int(w * 0.32), int(h * 0.28)],
-                [int(w * 0.68), int(h * 0.28)],
-                [int(w * 0.98), int(h * 0.98)],
-                [int(w * 0.02), int(h * 0.98)],
-            ])
+                self.segmenter.auto_estimate_road_roi((h, w), detections, frame=frame)
+            if self.segmenter.roi_pts is not None:
+                self.src_pts = np.float32(self.segmenter.roi_pts)
+            else:
+                self.src_pts = np.float32([
+                    [int(w * 0.38), int(h * 0.35)],
+                    [int(w * 0.62), int(h * 0.35)],
+                    [int(w * 0.97), int(h * 0.97)],
+                    [int(w * 0.03), int(h * 0.97)],
+                ])
         elif self.segmenter.roi_mask is None:
             self.segmenter.set_roi_polygon((h, w), self.src_pts)
+
+        # ----------------------------------------------------------------------
+        # LỌC PHƯƠNG TIỆN THEO ĐÚNG VÙNG ROI ĐƯỢC CHỈ ĐỊNH:
+        # Chỉ những xe có tâm (center point) nằm bên trong ROI mới được giữ lại.
+        # Xe ngoài ROI (vỉa hè, hàng xe đỗ hai bên, cây xanh...) bị loại bỏ hoàn toàn.
+        # ----------------------------------------------------------------------
+        if self.src_pts is not None:
+            detections = self.detector.filter_detections_by_roi(detections, self.src_pts)
+            # Cập nhật lại số lượng và chỉ số tải trọng PCU chỉ từ xe trong ROI
+            vehicle_counts = {"motorcycle": 0, "car": 0, "bus": 0, "truck": 0}
+            total_pcu = 0.0
+            for d in detections:
+                lbl = d["label"]
+                if lbl in vehicle_counts:
+                    vehicle_counts[lbl] += 1
+                total_pcu += PCU_WEIGHTS.get(lbl, 1.0)
+            total_pcu = round(total_pcu, 2)
+
 
         # 2. TV2: Tiền xử lý & Nắn phối cảnh Bird's-Eye View (BEV)
         enhanced_frame = preprocess_frame(frame)

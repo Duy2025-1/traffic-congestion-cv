@@ -21,3 +21,4 @@ weights/*.onnx
 Thumbs.db
 runs/
 data/dataset/
+scratch/

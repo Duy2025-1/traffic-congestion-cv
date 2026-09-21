@@ -108,10 +108,23 @@ def main():
             v_key = os.path.basename(str(video_source))
             h, w = frame.shape[:2]
             if v_key in VIDEO_CONFIG:
+                # Video đã cấu hình: dùng polygon phối cảnh từ configs/toadovideo.py
                 pts = VIDEO_CONFIG[v_key]["src_pts"]
                 segmenter.set_roi_polygon((h, w), pts)
             else:
-                segmenter.auto_estimate_road_roi((h, w), detections)
+                # Video mới: chạy PerspectiveROIEstimator phân tích hình học từ frame thực
+                segmenter.auto_estimate_road_roi((h, w), detections, frame=frame)
+
+        # ---------------------------------------------------------------
+        # LỌC XE THEO ROI: Chỉ giữ xe có center point nằm trong polygon ROI
+        # Xe ngoài ROI (vỉa hè, cây cối, tòa nhà...) bị loại bỏ hoàn toàn.
+        # PCU được tính lại từ danh sách xe đã lọc.
+        # ---------------------------------------------------------------
+        if segmenter.roi_pts is not None:
+            detections = detector.filter_detections_by_roi(detections, segmenter.roi_pts)
+            # Tính lại PCU chỉ từ xe trong ROI
+            from config import PCU_WEIGHTS
+            pcu_count = round(sum(PCU_WEIGHTS.get(d["label"], 1.0) for d in detections), 2)
 
         # 2. Tiền xử lý (TV2)
         enhanced_frame = preprocess_frame(frame)
@@ -120,6 +133,8 @@ def main():
         occupancy_ratio, occ_mask = segmenter.extract_occupancy(
             enhanced_frame, detections=detections
         )
+
+
 
         # 4. Ước lượng vận tốc qua Optical Flow (TV4)
         avg_speed, flow_mag = motion_est.estimate_speed(enhanced_frame)
@@ -134,6 +149,15 @@ def main():
 
         # Vẽ Bounding Box nhận diện xe (TV5) và HUD đánh giá ùn tắc (TV1)
         frame = detector.draw_detections(frame, detections)
+
+        # Vẽ viền ROI màu VÀNG trực tiếp trên frame chính để dễ kiểm tra
+        if segmenter.roi_pts is not None:
+            cv2.polylines(frame, [segmenter.roi_pts.reshape(-1, 1, 2)],
+                          isClosed=True, color=(0, 255, 255), thickness=2)
+        elif segmenter.roi_mask is not None:
+            roi_contours, _ = cv2.findContours(segmenter.roi_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            cv2.drawContours(frame, roi_contours, -1, (0, 255, 255), 2)
+
         draw_hud(frame, result, fps)
 
         # Tạo Heatmap hiển thị Optical Flow (TV4)
