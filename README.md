@@ -160,7 +160,7 @@ python train.py --val-only --model weights/best.pt
 
 ## 📓 6. Hệ Thống Sổ Ghi Chép Thí Nghiệm Lab (Jupyter Notebooks)
 
-Hệ thống bao gồm đầy đủ **6 sổ ghi chép thí nghiệm** độc lập, đáp ứng trọn vẹn yêu cầu lab report (Phát biểu mục tiêu/giả thuyết, Ảnh trung gian, Parameter Sweep $\ge 3$ giá trị, Nhận xét phân tích):
+Hệ thống bao gồm đầy đủ **7 sổ ghi chép thí nghiệm** độc lập tương ứng với 7 thành viên, đáp ứng trọn vẹn yêu cầu lab report (Phát biểu mục tiêu/giả thuyết, Ảnh trung gian, Parameter Sweep $\ge 3$ giá trị, Nhận xét phân tích):
 
 ```bash
 # Khởi chạy Jupyter Notebook để xem toàn bộ thí nghiệm:
@@ -169,12 +169,13 @@ jupyter notebook
 
 | Notebook | Tên thí nghiệm & Nội dung | Yêu cầu bài tập lớn đáp ứng |
 | :--- | :--- | :--- |
-| [`01_tci_parameter_sweep.ipynb`](notebooks/01_tci_parameter_sweep.ipynb) | **Khảo sát bộ trọng số TCI:** So sánh 3 bộ trọng số $(w_1, w_2, w_3)$ trên cả 3 video thực tế. | Khảo sát tham số hợp nhất đa đặc trưng TCI |
-| [`02_preprocessing_sweep.ipynb`](notebooks/02_preprocessing_sweep.ipynb) | **Tiền xử lý ảnh (Ch.2):** Khảo sát tham số `clipLimit` của CLAHE (1.0 vs 2.0 vs 4.0) và kích thước Gaussian kernel. | Ảnh trung gian, Parameter Sweep Chương 2 |
-| [`03_segmentation_roi_sweep.ipynb`](notebooks/03_segmentation_roi_sweep.ipynb) | **Phân đoạn ảnh & ROI (Ch.4):** Khảo sát `varThreshold` MOG2 (8.0 vs 16.0 vs 32.0), so sánh ROI chữ nhật vs ROI phối cảnh, kiểm chứng giải pháp Hybrid Occupancy chống Background Absorption. | Ảnh trung gian 5 bước, Parameter Sweep Chương 4 |
-| [`04_optical_flow_tv4.ipynb`](notebooks/04_optical_flow_tv4.ipynb) | **Đo vận tốc Optical Flow (Ch.3):** Khảo sát `noise_threshold` (0.5 vs 1.0 vs 2.0 px/frame), Quiver Plot vector và JET Heatmap. | Ảnh trung gian, Parameter Sweep Chương 3 |
-| [`05_detection_tv5.ipynb`](notebooks/05_detection_tv5.ipynb) | **Nhận dạng đối tượng (Ch.5):** Khảo sát `conf_threshold` và `iou_threshold`, Per-Class NMS, quy đổi PCU, lọc xe theo ROI. | Ảnh trung gian, Parameter Sweep Chương 5 |
-| [`06_evaluation_tv6.ipynb`](notebooks/06_evaluation_tv6.ipynb) | **Đánh giá định lượng tổng thể:** Ma trận nhầm lẫn (Confusion Matrix), Sai số MAE vận tốc, phân tích độ nhạy và kiểm chứng giả thuyết. | Đánh giá định lượng toàn hệ thống |
+| [`01_tci_parameter_sweep.ipynb`](notebooks/01_tci_parameter_sweep.ipynb) | **Khảo sát bộ trọng số TCI (TV1):** So sánh 3 bộ trọng số $(w_1, w_2, w_3)$ trên cả 3 video thực tế. | Khảo sát tham số hợp nhất đa đặc trưng TCI |
+| [`02_preprocessing_sweep.ipynb`](notebooks/02_preprocessing_sweep.ipynb) | **Tiền xử lý ảnh (Ch.2 - TV2):** Khảo sát tham số `clipLimit` của CLAHE (1.0 vs 2.0 vs 4.0) và kích thước Gaussian kernel. | Ảnh trung gian, Parameter Sweep Chương 2 |
+| [`03_segmentation_roi_sweep.ipynb`](notebooks/03_segmentation_roi_sweep.ipynb) | **Phân đoạn ảnh & ROI (Ch.4 - TV3):** Khảo sát `varThreshold` MOG2 (8.0 vs 16.0 vs 32.0), so sánh ROI chữ nhật vs ROI phối cảnh, kiểm chứng giải pháp Hybrid Occupancy chống Background Absorption. | Ảnh trung gian 5 bước, Parameter Sweep Chương 4 |
+| [`04_optical_flow_tv4.ipynb`](notebooks/04_optical_flow_tv4.ipynb) | **Đo vận tốc Optical Flow (Ch.3 - TV4):** Khảo sát `noise_threshold` (0.5 vs 1.0 vs 2.0 px/frame), Quiver Plot vector và JET Heatmap. | Ảnh trung gian, Parameter Sweep Chương 3 |
+| [`05_detection_tv5.ipynb`](notebooks/05_detection_tv5.ipynb) | **Nhận dạng đối tượng (Ch.5 - TV5):** Khảo sát `conf_threshold` và `iou_threshold`, Per-Class NMS, quy đổi PCU, lọc xe theo ROI. | Ảnh trung gian, Parameter Sweep Chương 5 |
+| [`06_evaluation_tv6.ipynb`](notebooks/06_evaluation_tv6.ipynb) | **Đánh giá định lượng tổng thể (TV6):** Ma trận nhầm lẫn (Confusion Matrix), Sai số MAE vận tốc, phân tích độ nhạy và kiểm chứng giả thuyết. | Đánh giá định lượng toàn hệ thống |
+| [`07_dashboard_tv7.ipynb`](notebooks/07_dashboard_tv7.ipynb) | **Dashboard Trực quan hóa & Tích hợp (TV7):** Điều phối luồng 4 khung hình kỹ thuật, tối ưu hóa FPS, HUD trung tâm và xuất ảnh nghiệm thu Canvas. | Báo cáo tích hợp Web Dashboard & Kiểm thử tự động |
 
 ---
 
@@ -190,7 +191,7 @@ traffic-congestion-cv/
 │   │   ├── traffic_congested.mp4     # Video phố New York kẹt cứng
 │   │   ├── traffic_free_flow.mp4     # Video cao tốc thông thoáng
 │   │   └── traffic_traffic_light.mp4 # Video ngã tư Hà Nội đèn tín hiệu
-│   └── processed/                    # Thư mục lưu trữ ảnh kết quả nghiệm thu
+│   └── processed/                    # Thư mục lưu trữ ảnh kết quả nghiệm thu (Canvas snapshot)
 ├── demo/
 │   └── app.py                        # Web Dashboard Streamlit đa luồng (TV7)
 ├── evaluation/
@@ -203,15 +204,17 @@ traffic-congestion-cv/
 │   ├── segmentation.py               # Phân đoạn MOG2, ROI phối cảnh & Hybrid Occupancy (TV3)
 │   ├── optical_flow.py               # Đo vận tốc Farneback Optical Flow & Heatmap (TV4)
 │   └── detection.py                  # Phát hiện YOLOv8, PCU & Lọc xe theo ROI (TV5)
-├── notebooks/                        # 6 Sổ ghi chép thí nghiệm Lab đạt chuẩn Đề cương UTH
+├── notebooks/                        # 7 Sổ ghi chép thí nghiệm Lab đạt chuẩn Đề cương UTH
 │   ├── 01_tci_parameter_sweep.ipynb
 │   ├── 02_preprocessing_sweep.ipynb
 │   ├── 03_segmentation_roi_sweep.ipynb
 │   ├── 04_optical_flow_tv4.ipynb
 │   ├── 05_detection_tv5.ipynb
-│   └── 06_evaluation_tv6.ipynb
+│   ├── 06_evaluation_tv6.ipynb
+│   └── 07_dashboard_tv7.ipynb
 ├── config.py                         # Tham số trọng số TCI, ngưỡng mức độ và hệ số PCU
 ├── main.py                           # Điểm khởi chạy pipeline desktop chính (OpenCV CLI)
+├── test_tv7.py                       # Script kiểm thử tự động tích hợp Dashboard Pipeline (TV7)
 ├── train.py                          # Script huấn luyện & fine-tuning đa video YOLOv8
 ├── requirements.txt                  # Danh mục các thư viện phụ thuộc
 └── README.md                         # Báo cáo thuyết minh & Tài liệu hướng dẫn sử dụng
